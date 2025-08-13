@@ -35,48 +35,86 @@ const NFTAnalytics = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Live collections with real-time updates
+  // Telegram Gift types with emojis and stats
+  const giftTypes = {
+    'star': { emoji: '⭐', name: 'Telegram Stars', basePrice: 2.4, rarity: 'common' },
+    'rocket': { emoji: '🚀', name: 'Space Rockets', basePrice: 4.8, rarity: 'rare' },
+    'diamond': { emoji: '💎', name: 'Diamond Gifts', basePrice: 8.2, rarity: 'epic' },
+    'crown': { emoji: '👑', name: 'Royal Crowns', basePrice: 12.5, rarity: 'legendary' },
+    'fire': { emoji: '🔥', name: 'Fire Tokens', basePrice: 1.8, rarity: 'common' },
+    'heart': { emoji: '❤️', name: 'Love Hearts', basePrice: 3.2, rarity: 'rare' },
+    'gem': { emoji: '💍', name: 'Precious Gems', basePrice: 6.7, rarity: 'epic' },
+    'trophy': { emoji: '🏆', name: 'Golden Trophy', basePrice: 15.0, rarity: 'legendary' }
+  };
+
+  // Live collections with real-time updates and gift types
   const [collections, setCollections] = useState([
     { 
       id: 1, 
-      name: 'Telegram Stars', 
+      giftType: 'star',
       price: 2.4, 
       change: 12.5, 
       volume: 145.2, 
       lastSale: new Date(Date.now() - 45000),
       hotness: 95,
-      trend: 'hot'
+      trend: 'hot',
+      soldCount: 1247
     },
     { 
       id: 2, 
-      name: 'Crypto Bears', 
-      price: 1.8, 
+      giftType: 'rocket',
+      price: 4.8, 
       change: 8.3, 
       volume: 98.7, 
       lastSale: new Date(Date.now() - 120000),
       hotness: 87,
-      trend: 'rising'
+      trend: 'rising',
+      soldCount: 892
     },
     { 
       id: 3, 
-      name: 'Digital Gems', 
-      price: 3.1, 
+      giftType: 'diamond',
+      price: 8.1, 
       change: -2.1, 
       volume: 76.3, 
       lastSale: new Date(Date.now() - 300000),
       hotness: 73,
-      trend: 'cooling'
+      trend: 'cooling',
+      soldCount: 634
     },
     { 
       id: 4, 
-      name: 'Meta Gifts', 
+      giftType: 'fire',
       price: 1.2, 
       change: 15.7, 
       volume: 129.8, 
       lastSale: new Date(Date.now() - 30000),
       hotness: 99,
-      trend: 'fire'
+      trend: 'fire',
+      soldCount: 2156
     },
+    {
+      id: 5,
+      giftType: 'crown',
+      price: 12.5,
+      change: 23.8,
+      volume: 234.7,
+      lastSale: new Date(Date.now() - 60000),
+      hotness: 98,
+      trend: 'fire',
+      soldCount: 345
+    },
+    {
+      id: 6,
+      giftType: 'heart',
+      price: 3.2,
+      change: 6.4,
+      volume: 67.8,
+      lastSale: new Date(Date.now() - 180000),
+      hotness: 82,
+      trend: 'rising',
+      soldCount: 756
+    }
   ]);
 
   // Update collections every 5 seconds
@@ -93,7 +131,8 @@ const NFTAnalytics = () => {
           volume: +(collection.volume + volumeChange).toFixed(1),
           change: +(collection.change + changePercent).toFixed(1),
           lastSale: Math.random() > 0.7 ? new Date() : collection.lastSale,
-          hotness: Math.max(0, Math.min(100, collection.hotness + Math.floor((Math.random() - 0.5) * 10)))
+          hotness: Math.max(0, Math.min(100, collection.hotness + Math.floor((Math.random() - 0.5) * 10))),
+          soldCount: collection.soldCount + (Math.random() > 0.8 ? Math.floor(Math.random() * 5 + 1) : 0)
         };
       }));
     };
@@ -132,29 +171,58 @@ const NFTAnalytics = () => {
     }
   };
 
-  // Live market data simulation
+  const getRegionFlag = (region) => {
+    switch(region) {
+      case 'RU': return '🇷🇺';
+      case 'US': return '🇺🇸';
+      case 'EU': return '🇪🇺';
+      case 'AS': return '🇮🇳';
+      case 'SA': return '🇧🇷';
+      default: return '🌍';
+    }
+  };
+
+  // Filter collections by price range
+  const filteredCollections = collections.filter(collection => {
+    const price = collection.price;
+    switch(selectedPriceRange) {
+      case '0-1': return price >= 0 && price <= 1;
+      case '1-5': return price > 1 && price <= 5;
+      case '5+': return price > 5;
+      default: return true;
+    }
+  });
+
+  // Live market data simulation with real gift statistics
   const [marketActivity, setMarketActivity] = useState([
-    { type: 'sale', collection: 'Telegram Stars', price: 2.4, time: new Date() },
-    { type: 'bid', collection: 'Crypto Bears', price: 1.9, time: new Date(Date.now() - 30000) },
-    { type: 'list', collection: 'Digital Gems', price: 3.2, time: new Date(Date.now() - 60000) }
+    { type: 'sale', giftType: 'star', price: 2.4, time: new Date(), buyerCount: 15, region: 'RU' },
+    { type: 'bid', giftType: 'rocket', price: 4.9, time: new Date(Date.now() - 30000), buyerCount: 8, region: 'US' },
+    { type: 'list', giftType: 'diamond', price: 8.2, time: new Date(Date.now() - 60000), buyerCount: 3, region: 'EU' },
+    { type: 'sale', giftType: 'fire', price: 1.8, time: new Date(Date.now() - 90000), buyerCount: 23, region: 'AS' },
+    { type: 'bid', giftType: 'crown', price: 12.8, time: new Date(Date.now() - 120000), buyerCount: 2, region: 'RU' }
   ]);
 
   useEffect(() => {
     const addMarketActivity = () => {
       const activities = ['sale', 'bid', 'list'];
-      const collectionNames = ['Telegram Stars', 'Crypto Bears', 'Digital Gems', 'Meta Gifts'];
+      const giftTypeKeys = Object.keys(giftTypes);
+      const regions = ['RU', 'US', 'EU', 'AS', 'SA'];
+      const selectedGift = giftTypeKeys[Math.floor(Math.random() * giftTypeKeys.length)];
+      const basePrice = giftTypes[selectedGift].basePrice;
       
       const newActivity = {
         type: activities[Math.floor(Math.random() * activities.length)],
-        collection: collectionNames[Math.floor(Math.random() * collectionNames.length)],
-        price: +(Math.random() * 3 + 0.5).toFixed(2),
-        time: new Date()
+        giftType: selectedGift,
+        price: +(basePrice * (0.8 + Math.random() * 0.4)).toFixed(2),
+        time: new Date(),
+        buyerCount: Math.floor(Math.random() * 30 + 1),
+        region: regions[Math.floor(Math.random() * regions.length)]
       };
 
-      setMarketActivity(prev => [newActivity, ...prev.slice(0, 9)]);
+      setMarketActivity(prev => [newActivity, ...prev.slice(0, 12)]);
     };
 
-    const interval = setInterval(addMarketActivity, 8000);
+    const interval = setInterval(addMarketActivity, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -323,7 +391,7 @@ const NFTAnalytics = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {collections.map((collection, index) => (
+                {filteredCollections.map((collection, index) => (
                   <div 
                     key={collection.id} 
                     className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02]"
@@ -341,13 +409,23 @@ const NFTAnalytics = () => {
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-white flex items-center">
-                          {collection.name}
+                          <span className="text-2xl mr-2">{giftTypes[collection.giftType].emoji}</span>
+                          {giftTypes[collection.giftType].name}
                           {collection.hotness > 90 && (
                             <Icon name="Zap" size={14} className="ml-2 text-yellow-500 animate-pulse" />
                           )}
+                          <Badge className={`ml-2 text-xs ${
+                            giftTypes[collection.giftType].rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                            giftTypes[collection.giftType].rarity === 'epic' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                            giftTypes[collection.giftType].rarity === 'rare' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                            'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                          }`}>
+                            {giftTypes[collection.giftType].rarity}
+                          </Badge>
                         </div>
-                        <div className="text-xs text-slate-400 mb-1">
-                          Последняя продажа: {formatTimeAgo(collection.lastSale)}
+                        <div className="text-xs text-slate-400 mb-1 space-x-3">
+                          <span>Последняя продажа: {formatTimeAgo(collection.lastSale)}</span>
+                          <span className="text-green-400">Продано: {collection.soldCount}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-slate-400">Активность:</span>
@@ -394,11 +472,16 @@ const NFTAnalytics = () => {
                         activity.type === 'bid' ? 'bg-blue-500' : 'bg-yellow-500'
                       } animate-pulse`}></div>
                       <div>
-                        <div className="font-medium text-white text-sm">
+                        <div className="font-medium text-white text-sm flex items-center">
                           {activity.type === 'sale' ? '🎉 Продажа' : 
                            activity.type === 'bid' ? '📈 Ставка' : '📋 Лист'}
+                          <span className="ml-2">{getRegionFlag(activity.region)}</span>
                         </div>
-                        <div className="text-xs text-slate-400">{activity.collection}</div>
+                        <div className="text-xs text-slate-400 flex items-center">
+                          <span className="text-lg mr-1">{giftTypes[activity.giftType].emoji}</span>
+                          {giftTypes[activity.giftType].name}
+                          <span className="ml-2 text-blue-400">• {activity.buyerCount} покупателей</span>
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
