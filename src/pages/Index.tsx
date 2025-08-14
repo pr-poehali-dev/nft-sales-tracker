@@ -252,10 +252,37 @@ const NFTAnalytics = () => {
 
   // Generate detailed statistics for selected gift
   const getGiftStatistics = (giftType) => {
+    if (!giftType || giftType === 'all') return null;
+    
     const giftCollections = collections.filter(c => c.giftType === giftType);
     const giftActivity = marketActivity.filter(a => a.giftType === giftType);
     
-    if (giftCollections.length === 0) return null;
+    // If no collections found, create some mock data based on the gift type
+    if (giftCollections.length === 0) {
+      const baseGift = giftTypes[giftType];
+      if (!baseGift) return null;
+      
+      const mockCollection = {
+        id: 'mock-' + giftType,
+        giftType: giftType,
+        price: baseGift.basePrice,
+        change: (Math.random() - 0.5) * 20,
+        volume: Math.random() * 1000 + 100,
+        soldCount: Math.floor(Math.random() * 100 + 10),
+        fragmentSales: Math.floor(Math.random() * 50 + 5),
+        tonnelListings: Math.floor(Math.random() * 30 + 3)
+      };
+      
+      return {
+        totalSales: mockCollection.soldCount,
+        totalVolume: mockCollection.volume,
+        avgPrice: mockCollection.price,
+        recentSales: Math.floor(Math.random() * 10 + 1),
+        recentBids: Math.floor(Math.random() * 5 + 1),
+        collections: [mockCollection],
+        activity: giftActivity.slice(0, 5)
+      };
+    }
     
     const totalSales = giftCollections.reduce((sum, c) => sum + (c.soldCount || 0), 0);
     const totalVolume = giftCollections.reduce((sum, c) => sum + (c.volume || 0), 0);
@@ -394,16 +421,25 @@ const NFTAnalytics = () => {
                 <Icon name="Gift" size={16} className="text-yellow-400" />
                 <Select value={selectedGift} onValueChange={setSelectedGift}>
                   <SelectTrigger className="w-48 border-slate-600 bg-slate-900">
-                    <SelectValue />
+                    <SelectValue placeholder="Выберите подарок">
+                      {selectedGift === 'all' ? 'Все подарки' : 
+                       giftTypes[selectedGift] ? (
+                         <span className="flex items-center">
+                           <span className="mr-2">{giftTypes[selectedGift].emoji}</span>
+                           {giftTypes[selectedGift].name}
+                         </span>
+                       ) : 'Все подарки'
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все подарки</SelectItem>
                     {Object.entries(giftTypes).map(([key, gift]) => (
                       <SelectItem key={key} value={key}>
-                        <span className="flex items-center">
+                        <div className="flex items-center">
                           <span className="mr-2">{gift.emoji}</span>
                           {gift.name}
-                        </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -501,37 +537,47 @@ const NFTAnalytics = () => {
                 const volume = giftCollection?.volume || Math.random() * 1000 + 100;
                 const bubbleSize = Math.max(60, Math.min(120, volume / 50));
                 const isHot = (giftCollection?.hotness || 50) > 80;
+                const isSelected = selectedGift === key;
                 
                 return (
                   <div
                     key={key}
-                    onClick={() => setSelectedGift(selectedGift === key ? 'all' : key)}
+                    onClick={() => {
+                      const newSelection = selectedGift === key ? 'all' : key;
+                      setSelectedGift(newSelection);
+                    }}
                     className={`relative cursor-pointer transition-all duration-300 hover:scale-110 ${
-                      selectedGift === key ? 'ring-4 ring-blue-400/50' : ''
+                      isSelected ? 'ring-4 ring-blue-400/70 scale-105' : 'hover:ring-2 hover:ring-blue-400/30'
                     }`}
                     style={{
                       width: `${bubbleSize}px`,
                       height: `${bubbleSize}px`
                     }}
                   >
-                    <div className={`w-full h-full rounded-full flex flex-col items-center justify-center text-white font-semibold text-xs border-2 ${
+                    <div className={`w-full h-full rounded-full flex flex-col items-center justify-center text-white font-semibold text-xs border-2 transition-all duration-300 ${
                       gift.rarity === 'legendary' ? 'bg-gradient-to-br from-yellow-500/80 to-orange-500/80 border-yellow-400 shadow-lg shadow-yellow-400/30' :
                       gift.rarity === 'epic' ? 'bg-gradient-to-br from-purple-500/80 to-pink-500/80 border-purple-400 shadow-lg shadow-purple-400/30' :
                       gift.rarity === 'rare' ? 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 border-blue-400 shadow-lg shadow-blue-400/30' :
                       'bg-gradient-to-br from-gray-500/80 to-slate-500/80 border-gray-400 shadow-lg shadow-gray-400/30'
-                    } ${isHot ? 'animate-pulse' : ''}`}>
+                    } ${isHot ? 'animate-pulse' : ''} ${isSelected ? 'brightness-125' : ''}`}>
                       <div className="text-2xl mb-1">{gift.emoji}</div>
                       <div className="text-center leading-tight px-1">
-                        {gift.name.split(' ')[0]}
-                        {gift.name.split(' ')[1] && <div>{gift.name.split(' ')[1]}</div>}
+                        <div className="text-[10px]">
+                          {gift.name.length > 12 ? gift.name.substring(0, 10) + '...' : gift.name}
+                        </div>
                       </div>
                       <div className="text-[10px] text-white/80 mt-1">
-                        {giftCollection?.price?.toFixed(0) || gift.basePrice.toFixed(0)} TON
+                        {giftCollection?.price ? giftCollection.price.toFixed(0) : gift.basePrice.toFixed(0)} TON
                       </div>
                     </div>
                     {isHot && (
                       <div className="absolute -top-1 -right-1">
                         <Icon name="Flame" size={16} className="text-red-500 animate-bounce" />
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <Icon name="Check" size={12} className="text-white" />
                       </div>
                     )}
                   </div>
@@ -599,16 +645,19 @@ const NFTAnalytics = () => {
                     Активные коллекции
                   </h4>
                   <div className="space-y-2">
-                    {selectedGiftStats.collections.map((collection) => (
-                      <div key={collection.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                    {selectedGiftStats.collections.map((collection, index) => (
+                      <div key={collection.id || index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700">
                         <div>
-                          <div className="font-medium text-white">#{collection.id}</div>
-                          <div className="text-xs text-slate-400">Продано: {collection.soldCount}</div>
+                          <div className="font-medium text-white">#{typeof collection.id === 'string' && collection.id.includes('mock') ? '∞' : collection.id}</div>
+                          <div className="text-xs text-slate-400">Продано: {collection.soldCount || 0}</div>
+                          <div className="text-xs text-slate-500">
+                            Fragment: {collection.fragmentSales || 0} • Tonnel: {collection.tonnelListings || 0}
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-400">{collection.price} TON</div>
-                          <div className={`text-xs ${collection.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {collection.change > 0 ? '+' : ''}{collection.change.toFixed(1)}%
+                          <div className="font-bold text-blue-400">{(collection.price || 0).toFixed(1)} TON</div>
+                          <div className={`text-xs ${(collection.change || 0) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {(collection.change || 0) > 0 ? '+' : ''}{(collection.change || 0).toFixed(1)}%
                           </div>
                         </div>
                       </div>
@@ -622,25 +671,31 @@ const NFTAnalytics = () => {
                     Недавняя активность
                   </h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {selectedGiftStats.activity.slice(0, 8).map((activity, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/30 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            activity.type === 'sale' ? 'bg-green-500' : 
-                            activity.type === 'bid' ? 'bg-blue-500' : 'bg-yellow-500'
-                          }`}></div>
-                          <span className="text-sm text-white">
-                            {activity.type === 'sale' ? 'Продажа' : 
-                             activity.type === 'bid' ? 'Ставка' : 'Листинг'}
-                          </span>
-                          <span className="text-xs text-slate-400">{getRegionFlag(activity.region)}</span>
+                    {selectedGiftStats.activity && selectedGiftStats.activity.length > 0 ? 
+                      selectedGiftStats.activity.slice(0, 8).map((activity, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-slate-900/30 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              activity.type === 'sale' ? 'bg-green-500' : 
+                              activity.type === 'bid' ? 'bg-blue-500' : 'bg-yellow-500'
+                            }`}></div>
+                            <span className="text-sm text-white">
+                              {activity.type === 'sale' ? 'Продажа' : 
+                               activity.type === 'bid' ? 'Ставка' : 'Листинг'}
+                            </span>
+                            <span className="text-xs text-slate-400">{getRegionFlag(activity.region || 'RU')}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-purple-400">{(activity.price || 0).toFixed(1)} TON</div>
+                            <div className="text-xs text-slate-400">{formatTimeAgo(activity.time || new Date())}</div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-purple-400">{activity.price} TON</div>
-                          <div className="text-xs text-slate-400">{formatTimeAgo(activity.time)}</div>
-                        </div>
+                      )) : 
+                      <div className="text-center text-slate-400 py-4">
+                        <Icon name="Activity" size={24} className="mx-auto mb-2" />
+                        <div>Нет недавней активности</div>
                       </div>
-                    ))}
+                    }
                   </div>
                 </div>
               </div>
