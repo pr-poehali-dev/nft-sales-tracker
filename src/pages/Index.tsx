@@ -264,7 +264,9 @@ const NFTAnalytics = () => {
         price: +(basePrice * (0.8 + Math.random() * 0.4)).toFixed(2),
         time: new Date(),
         buyerCount: Math.floor(Math.random() * 30 + 1),
-        region: regions[Math.floor(Math.random() * regions.length)]
+        region: regions[Math.floor(Math.random() * regions.length)],
+        platform: ['Fragment', 'Tonnel', 'Telegram'][Math.floor(Math.random() * 3)],
+        volume24h: +(Math.random() * 1000 + 100).toFixed(1)
       };
 
       setMarketActivity(prev => [newActivity, ...prev.slice(0, 12)]);
@@ -457,28 +459,28 @@ const NFTAnalytics = () => {
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-white flex items-center">
-                          <span className="text-2xl mr-2">{giftTypes[collection.giftType].emoji}</span>
-                          {giftTypes[collection.giftType].name}
+                          <span className="text-2xl mr-2">{giftTypes[collection.giftType]?.emoji || '🎁'}</span>
+                          {giftTypes[collection.giftType]?.name || 'Unknown Gift'}
                           {collection.hotness > 90 && (
                             <Icon name="Zap" size={14} className="ml-2 text-yellow-500 animate-pulse" />
                           )}
                           <Badge className={`ml-2 text-xs ${
-                            giftTypes[collection.giftType].rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                            giftTypes[collection.giftType].rarity === 'epic' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                            giftTypes[collection.giftType].rarity === 'rare' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                            giftTypes[collection.giftType]?.rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                            giftTypes[collection.giftType]?.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                            giftTypes[collection.giftType]?.rarity === 'rare' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
                             'bg-gray-500/20 text-gray-400 border-gray-500/30'
                           }`}>
-                            {giftTypes[collection.giftType].rarity}
+                            {giftTypes[collection.giftType]?.rarity || 'common'}
                           </Badge>
                         </div>
                         <div className="text-xs text-slate-400 mb-1 space-x-3">
                           <span>Последняя продажа: {formatTimeAgo(collection.lastSale)}</span>
-                          <span className="text-green-400">Продано: {collection.soldCount}</span>
+                          <span className="text-green-400">Продано: {collection.soldCount || 0}</span>
                         </div>
                         <div className="text-xs text-slate-500 mb-1 flex space-x-2">
-                          <span className="text-blue-400">Fragment: {collection.fragmentSales}</span>
-                          <span className="text-purple-400">Tonnel: {collection.tonnelListings}</span>
-                          <span className="text-yellow-400">{giftTypes[collection.giftType].stars.toLocaleString()} Stars</span>
+                          <span className="text-blue-400">Fragment: {collection.fragmentSales || 0}</span>
+                          <span className="text-purple-400">Tonnel: {collection.tonnelListings || 0}</span>
+                          <span className="text-yellow-400">{giftTypes[collection.giftType]?.stars ? giftTypes[collection.giftType].stars.toLocaleString() : '0'} Stars</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-slate-400">Активность:</span>
@@ -488,12 +490,12 @@ const NFTAnalytics = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-blue-400">{collection.price.toLocaleString()} TON</div>
+                      <div className="font-bold text-blue-400">{collection.price ? collection.price.toLocaleString() : '0'} TON</div>
                       <div className={`text-sm ${collection.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {collection.change > 0 ? '+' : ''}{collection.change.toLocaleString()}%
+                        {collection.change > 0 ? '+' : ''}{collection.change ? collection.change.toFixed(1) : '0'}%
                       </div>
-                      <div className="text-xs text-slate-400">{collection.volume.toLocaleString()} TON объем</div>
-                      <div className="text-xs text-green-500">${(collection.price * 5.72).toLocaleString()} USD</div>
+                      <div className="text-xs text-slate-400">{collection.volume ? collection.volume.toLocaleString() : '0'} TON объем</div>
+                      <div className="text-xs text-green-500">${collection.price ? (collection.price * 5.72).toFixed(0) : '0'} USD</div>
                     </div>
                   </div>
                 ))}
@@ -535,9 +537,9 @@ const NFTAnalytics = () => {
                           <span className="ml-2">{getRegionFlag(activity.region)}</span>
                         </div>
                         <div className="text-xs text-slate-400 flex items-center">
-                          <span className="text-lg mr-1">{giftTypes[activity.giftType].emoji}</span>
-                          {giftTypes[activity.giftType].name}
-                          <span className="ml-2 text-blue-400">• {activity.buyerCount} покупателей</span>
+                          <span className="text-lg mr-1">{giftTypes[activity.giftType]?.emoji || '🎁'}</span>
+                          {giftTypes[activity.giftType]?.name || 'Unknown Gift'}
+                          <span className="ml-2 text-blue-400">• {activity.buyerCount || 0} покупателей</span>
                         </div>
                         <div className="text-xs text-slate-500 flex items-center mt-1">
                           <span className={`px-2 py-1 rounded text-xs ${
@@ -547,13 +549,13 @@ const NFTAnalytics = () => {
                           }`}>
                             {activity.platform}
                           </span>
-                          <span className="ml-2 text-slate-400">24h: {activity.volume24h.toLocaleString()} TON</span>
+                          <span className="ml-2 text-slate-400">24h: {activity.volume24h ? activity.volume24h.toLocaleString() : '0'} TON</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-purple-400">{activity.price.toLocaleString()} TON</div>
-                      <div className="text-xs text-green-500">${(activity.price * 5.72).toLocaleString()}</div>
+                      <div className="font-bold text-purple-400">{activity.price ? activity.price.toLocaleString() : '0'} TON</div>
+                      <div className="text-xs text-green-500">${activity.price ? (activity.price * 5.72).toFixed(2) : '0'}</div>
                       <div className="text-xs text-slate-400">{formatTimeAgo(activity.time)}</div>
                     </div>
                   </div>
