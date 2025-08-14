@@ -250,6 +250,16 @@ const NFTAnalytics = () => {
     return priceMatch && giftMatch;
   });
 
+  // Live market data simulation with real Telegram gift analytics from Fragment/Tonnel marketplaces
+  const [marketActivity, setMarketActivity] = useState([
+    { type: 'sale', giftType: 'gold_pepe', price: 6500.0, time: new Date(), buyerCount: 1, region: 'US', platform: 'Fragment', volume24h: 45682.3 },
+    { type: 'bid', giftType: 'diamond_ring', price: 89.5, time: new Date(Date.now() - 30000), buyerCount: 3, region: 'EU', platform: 'Tonnel', volume24h: 3421.8 },
+    { type: 'list', giftType: 'dancing_duck', price: 47.2, time: new Date(Date.now() - 60000), buyerCount: 5, region: 'RU', platform: 'Fragment', volume24h: 1876.5 },
+    { type: 'sale', giftType: 'magic_wand', price: 28.7, time: new Date(Date.now() - 90000), buyerCount: 8, region: 'AS', platform: 'Tonnel', volume24h: 987.3 },
+    { type: 'upgrade', giftType: 'lucky_clover', price: 12.4, time: new Date(Date.now() - 120000), buyerCount: 12, region: 'RU', platform: 'Telegram', volume24h: 543.7 },
+    { type: 'auction', giftType: 'golden_trophy', price: 156.8, time: new Date(Date.now() - 150000), buyerCount: 2, region: 'US', platform: 'Fragment', volume24h: 2987.4 }
+  ]);
+
   // Generate detailed statistics for selected gift
   const getGiftStatistics = (giftType) => {
     if (!giftType || giftType === 'all') return null;
@@ -302,16 +312,6 @@ const NFTAnalytics = () => {
   };
 
   const selectedGiftStats = selectedGift !== 'all' ? getGiftStatistics(selectedGift) : null;
-
-  // Live market data simulation with real Telegram gift analytics from Fragment/Tonnel marketplaces
-  const [marketActivity, setMarketActivity] = useState([
-    { type: 'sale', giftType: 'gold_pepe', price: 6500.0, time: new Date(), buyerCount: 1, region: 'US', platform: 'Fragment', volume24h: 45682.3 },
-    { type: 'bid', giftType: 'diamond_ring', price: 89.5, time: new Date(Date.now() - 30000), buyerCount: 3, region: 'EU', platform: 'Tonnel', volume24h: 3421.8 },
-    { type: 'list', giftType: 'dancing_duck', price: 47.2, time: new Date(Date.now() - 60000), buyerCount: 5, region: 'RU', platform: 'Fragment', volume24h: 1876.5 },
-    { type: 'sale', giftType: 'magic_wand', price: 28.7, time: new Date(Date.now() - 90000), buyerCount: 8, region: 'AS', platform: 'Tonnel', volume24h: 987.3 },
-    { type: 'upgrade', giftType: 'lucky_clover', price: 12.4, time: new Date(Date.now() - 120000), buyerCount: 12, region: 'RU', platform: 'Telegram', volume24h: 543.7 },
-    { type: 'auction', giftType: 'golden_trophy', price: 156.8, time: new Date(Date.now() - 150000), buyerCount: 2, region: 'US', platform: 'Fragment', volume24h: 2987.4 }
-  ]);
 
   useEffect(() => {
     const addMarketActivity = () => {
