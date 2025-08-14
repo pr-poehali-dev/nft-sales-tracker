@@ -10,6 +10,7 @@ const NFTAnalytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
+  const [selectedGift, setSelectedGift] = useState('all');
   const [liveData, setLiveData] = useState({
     totalSales: 0,
     totalVolume: 0,
@@ -229,16 +230,51 @@ const NFTAnalytics = () => {
     }
   };
 
-  // Filter collections by TON price range
+  // Filter collections by TON price range and gift type
   const filteredCollections = collections.filter(collection => {
     const price = collection.price;
+    let priceMatch = true;
+    let giftMatch = true;
+    
     switch(selectedPriceRange) {
-      case '0-1': return price >= 0 && price <= 10; // 0-10 TON
-      case '1-5': return price > 10 && price <= 100; // 10-100 TON
-      case '5+': return price > 100; // 100+ TON
-      default: return true;
+      case '0-1': priceMatch = price >= 0 && price <= 10; break;
+      case '1-5': priceMatch = price > 10 && price <= 100; break;
+      case '5+': priceMatch = price > 100; break;
+      default: priceMatch = true;
     }
+    
+    if (selectedGift !== 'all') {
+      giftMatch = collection.giftType === selectedGift;
+    }
+    
+    return priceMatch && giftMatch;
   });
+
+  // Generate detailed statistics for selected gift
+  const getGiftStatistics = (giftType) => {
+    const giftCollections = collections.filter(c => c.giftType === giftType);
+    const giftActivity = marketActivity.filter(a => a.giftType === giftType);
+    
+    if (giftCollections.length === 0) return null;
+    
+    const totalSales = giftCollections.reduce((sum, c) => sum + (c.soldCount || 0), 0);
+    const totalVolume = giftCollections.reduce((sum, c) => sum + (c.volume || 0), 0);
+    const avgPrice = giftCollections.reduce((sum, c) => sum + (c.price || 0), 0) / giftCollections.length;
+    const recentSales = giftActivity.filter(a => a.type === 'sale').length;
+    const recentBids = giftActivity.filter(a => a.type === 'bid').length;
+    
+    return {
+      totalSales,
+      totalVolume,
+      avgPrice,
+      recentSales,
+      recentBids,
+      collections: giftCollections,
+      activity: giftActivity
+    };
+  };
+
+  const selectedGiftStats = selectedGift !== 'all' ? getGiftStatistics(selectedGift) : null;
 
   // Live market data simulation with real Telegram gift analytics from Fragment/Tonnel marketplaces
   const [marketActivity, setMarketActivity] = useState([
@@ -353,6 +389,26 @@ const NFTAnalytics = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Icon name="Gift" size={16} className="text-yellow-400" />
+                <Select value={selectedGift} onValueChange={setSelectedGift}>
+                  <SelectTrigger className="w-48 border-slate-600 bg-slate-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все подарки</SelectItem>
+                    {Object.entries(giftTypes).map(([key, gift]) => (
+                      <SelectItem key={key} value={key}>
+                        <span className="flex items-center">
+                          <span className="mr-2">{gift.emoji}</span>
+                          {gift.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -426,6 +482,171 @@ const NFTAnalytics = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Gift Bubble Map */}
+        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur mb-8">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-white flex items-center">
+              <Icon name="Sparkles" size={20} className="mr-2 text-yellow-500" />
+              Bubble Map подарков
+              <Badge className="ml-2 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                Размер = объем торгов
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4 justify-center items-center min-h-[200px]">
+              {Object.entries(giftTypes).map(([key, gift]) => {
+                const giftCollection = collections.find(c => c.giftType === key);
+                const volume = giftCollection?.volume || Math.random() * 1000 + 100;
+                const bubbleSize = Math.max(60, Math.min(120, volume / 50));
+                const isHot = (giftCollection?.hotness || 50) > 80;
+                
+                return (
+                  <div
+                    key={key}
+                    onClick={() => setSelectedGift(selectedGift === key ? 'all' : key)}
+                    className={`relative cursor-pointer transition-all duration-300 hover:scale-110 ${
+                      selectedGift === key ? 'ring-4 ring-blue-400/50' : ''
+                    }`}
+                    style={{
+                      width: `${bubbleSize}px`,
+                      height: `${bubbleSize}px`
+                    }}
+                  >
+                    <div className={`w-full h-full rounded-full flex flex-col items-center justify-center text-white font-semibold text-xs border-2 ${
+                      gift.rarity === 'legendary' ? 'bg-gradient-to-br from-yellow-500/80 to-orange-500/80 border-yellow-400 shadow-lg shadow-yellow-400/30' :
+                      gift.rarity === 'epic' ? 'bg-gradient-to-br from-purple-500/80 to-pink-500/80 border-purple-400 shadow-lg shadow-purple-400/30' :
+                      gift.rarity === 'rare' ? 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 border-blue-400 shadow-lg shadow-blue-400/30' :
+                      'bg-gradient-to-br from-gray-500/80 to-slate-500/80 border-gray-400 shadow-lg shadow-gray-400/30'
+                    } ${isHot ? 'animate-pulse' : ''}`}>
+                      <div className="text-2xl mb-1">{gift.emoji}</div>
+                      <div className="text-center leading-tight px-1">
+                        {gift.name.split(' ')[0]}
+                        {gift.name.split(' ')[1] && <div>{gift.name.split(' ')[1]}</div>}
+                      </div>
+                      <div className="text-[10px] text-white/80 mt-1">
+                        {giftCollection?.price?.toFixed(0) || gift.basePrice.toFixed(0)} TON
+                      </div>
+                    </div>
+                    {isHot && (
+                      <div className="absolute -top-1 -right-1">
+                        <Icon name="Flame" size={16} className="text-red-500 animate-bounce" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selected Gift Details */}
+        {selectedGiftStats && (
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur mb-8">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-white flex items-center">
+                <span className="text-2xl mr-3">{giftTypes[selectedGift]?.emoji}</span>
+                Детальная статистика: {giftTypes[selectedGift]?.name}
+                <Badge className={`ml-2 text-xs ${
+                  giftTypes[selectedGift]?.rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                  giftTypes[selectedGift]?.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                  giftTypes[selectedGift]?.rarity === 'rare' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                  'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                }`}>
+                  {giftTypes[selectedGift]?.rarity}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div className="text-center p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                  <div className="text-2xl font-bold text-green-400 mb-1">
+                    {selectedGiftStats.totalSales.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-slate-400">Всего продаж</div>
+                </div>
+                <div className="text-center p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                  <div className="text-2xl font-bold text-blue-400 mb-1">
+                    {selectedGiftStats.totalVolume.toFixed(0)} TON
+                  </div>
+                  <div className="text-sm text-slate-400">Общий объем</div>
+                </div>
+                <div className="text-center p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                  <div className="text-2xl font-bold text-purple-400 mb-1">
+                    {selectedGiftStats.avgPrice.toFixed(1)} TON
+                  </div>
+                  <div className="text-sm text-slate-400">Средняя цена</div>
+                </div>
+                <div className="text-center p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                  <div className="text-2xl font-bold text-red-400 mb-1">
+                    {selectedGiftStats.recentSales}
+                  </div>
+                  <div className="text-sm text-slate-400">Продажи сегодня</div>
+                </div>
+                <div className="text-center p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                  <div className="text-2xl font-bold text-yellow-400 mb-1">
+                    {selectedGiftStats.recentBids}
+                  </div>
+                  <div className="text-sm text-slate-400">Активные ставки</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
+                    <Icon name="TrendingUp" size={18} className="mr-2 text-green-500" />
+                    Активные коллекции
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedGiftStats.collections.map((collection) => (
+                      <div key={collection.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                        <div>
+                          <div className="font-medium text-white">#{collection.id}</div>
+                          <div className="text-xs text-slate-400">Продано: {collection.soldCount}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-blue-400">{collection.price} TON</div>
+                          <div className={`text-xs ${collection.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {collection.change > 0 ? '+' : ''}{collection.change.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
+                    <Icon name="Activity" size={18} className="mr-2 text-purple-500" />
+                    Недавняя активность
+                  </h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {selectedGiftStats.activity.slice(0, 8).map((activity, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/30 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            activity.type === 'sale' ? 'bg-green-500' : 
+                            activity.type === 'bid' ? 'bg-blue-500' : 'bg-yellow-500'
+                          }`}></div>
+                          <span className="text-sm text-white">
+                            {activity.type === 'sale' ? 'Продажа' : 
+                             activity.type === 'bid' ? 'Ставка' : 'Листинг'}
+                          </span>
+                          <span className="text-xs text-slate-400">{getRegionFlag(activity.region)}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-purple-400">{activity.price} TON</div>
+                          <div className="text-xs text-slate-400">{formatTimeAgo(activity.time)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Live Collections with Hotness */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -617,7 +838,7 @@ const NFTAnalytics = () => {
         <div className="flex justify-center items-center space-x-4 mb-4">
           <div className="flex items-center space-x-2 text-green-400">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">Подключен к Fragment + Tonnel API</span>
+            <span className="text-sm">Подключен к Fragment + Tonnel API • {Object.keys(giftTypes).length} подарков</span>
           </div>
           <div className="w-px h-4 bg-slate-600"></div>
           <div className="text-sm text-slate-400">
